@@ -24,4 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "PulseRealTime"
 include(":app")
- 
+include(":pulse-core")
