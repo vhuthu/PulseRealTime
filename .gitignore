@@ -1,15 +1,24 @@
+# Android Studio — ignore the whole .idea folder
+.idea/
+
+# Module files
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
+
+# Gradle
+.gradle/
+local.properties
+gradle.properties
+
+# Build outputs — all modules
 /build
-/captures
+**/build/
+
+# NDK
 .externalNativeBuild
 .cxx
-local.properties
+
+# macOS
+.DS_Store
+
+# Captures
+/captures
