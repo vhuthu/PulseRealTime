@@ -81,6 +81,17 @@ class PulseRealtime private constructor(
         connectionManager.disconnect()
     }
 
+    /**
+     * Closes the connection temporarily (lifecycle-driven).
+     * The SDK will auto-reconnect when [connect] is called again.
+     * Subscriptions are preserved and replayed on reconnect.
+     *
+     * Prefer [bindToLifecycle] over calling this directly.
+     */
+    fun disconnectTemporary() {
+        connectionManager.disconnectTemporary()
+    }
+
     // ── Subscriptions ─────────────────────────────────────────────────────────
 
     /**

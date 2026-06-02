@@ -13,7 +13,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.lifecycleScope
+import com.vhuthu.pulse_android.bindToLifecycle
 import com.vhuthu.pulse_core.PulseRealtime
+import com.vhuthu.pulse_core.model.ConnectionState
+import com.vhuthu.pulse_core.model.ExponentialBackoff
 import com.vhuthu.pulserealtime.ui.theme.PulseRealTimeTheme
 import kotlinx.coroutines.launch
 
@@ -27,10 +30,14 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         //Sample demo to test , was using a mock websocket server I created using Node.js
 
-        // 1. INIT SDK
+        // INIT SDK
+        // Build once — bind to lifecycle — done
+        // No manual connect/disconnect needed anywhere else
         pulse = PulseRealtime.Builder()
             .url("ws://10.0.2.2:8080")
+            .reconnectPolicy(ExponentialBackoff(maxAttempts = 5))
             .build()
+            .bindToLifecycle(this) // ← manages connect/disconnect automatically
 
         setContent {
             PulseRealTimeTheme {
@@ -44,35 +51,35 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // 2. CONNECT SDK
-        pulse.connect()
-
-        // 3. COLLECT CONNECTION STATE
+        // Observe connection state
         lifecycleScope.launch {
             pulse.connectionState.collect { state ->
-                Log.d("PULSE", "Connection State = $state")
+                when (state) {
+                    is ConnectionState.Disconnected  -> Log.d("PULSE", "State: Disconnected")
+                    is ConnectionState.Connecting    -> Log.d("PULSE", "State: Connecting...")
+                    is ConnectionState.Connected     -> Log.d("PULSE", "State: Connected ✓")
+                    is ConnectionState.Reconnecting  -> Log.d("PULSE", "State: Reconnecting (attempt ${state.attempt})")
+                    is ConnectionState.Failed        -> Log.e("PULSE", "State: Failed — ${state.cause.message}")
+                }
             }
         }
 
-        // 4. COLLECT EVENTS
-        val subscription = pulse.subscribe("payments")
+        // Subscribe to a topic
+        val sub = pulse.subscribe("payments")
 
         lifecycleScope.launch {
-            subscription.events.collect { event ->
-                Log.d(
-                    "PULSE",
-                    "Event = ${event.event}, payload = ${event.payload}"
-                )
+            sub.events.collect { event ->
+                Log.d("PULSE", "─────────────────────────────")
+                Log.d("PULSE", "Topic:   ${event.topic}")
+                Log.d("PULSE", "Event:   ${event.event}")
+                Log.d("PULSE", "Ref:     ${event.ref}")
+                Log.d("PULSE", "Payload: ${event.payload}")
+                Log.d("PULSE", "─────────────────────────────")
             }
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        if (::pulse.isInitialized) {
-            pulse.disconnect()
-        }
-    }
+    // No onDestroy needed — lifecycle binding handles disconnect automatically
 }
 
 @Composable

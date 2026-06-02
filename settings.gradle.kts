@@ -26,3 +26,4 @@ rootProject.name = "PulseRealTime"
 include(":app")
 include(":pulse-core")
 include(":pulse-testing")
+include(":pulse-android")
