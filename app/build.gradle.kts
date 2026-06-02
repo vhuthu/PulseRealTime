@@ -58,4 +58,5 @@ dependencies {
 
     implementation(project(":pulse-core"))
     implementation(project(":pulse-android"))
+    implementation(project(":pulse-logging"))
 }

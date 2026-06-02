@@ -17,6 +17,7 @@ import com.vhuthu.pulse_android.bindToLifecycle
 import com.vhuthu.pulse_core.PulseRealtime
 import com.vhuthu.pulse_core.model.ConnectionState
 import com.vhuthu.pulse_core.model.ExponentialBackoff
+import com.vhuthu.pulse_logging.PrintLogger
 import com.vhuthu.pulserealtime.ui.theme.PulseRealTimeTheme
 import kotlinx.coroutines.launch
 
@@ -35,6 +36,7 @@ class MainActivity : ComponentActivity() {
         // No manual connect/disconnect needed anywhere else
         pulse = PulseRealtime.Builder()
             .url("ws://10.0.2.2:8080")
+            .logger(PrintLogger)
             .reconnectPolicy(ExponentialBackoff(maxAttempts = 5))
             .build()
             .bindToLifecycle(this) // ← manages connect/disconnect automatically
