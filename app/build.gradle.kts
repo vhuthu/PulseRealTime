@@ -57,4 +57,5 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     implementation(project(":pulse-core"))
+    implementation(project(":pulse-android"))
 }
