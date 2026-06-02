@@ -9,6 +9,9 @@ import com.vhuthu.pulse_core.model.InternalEvent
 import com.vhuthu.pulse_core.model.ReconnectPolicy
 import com.vhuthu.pulse_core.model.TopicSubscription
 import com.vhuthu.pulse_core.router.EventRouter
+import com.vhuthu.pulse_logging.NoOpLogger
+import com.vhuthu.pulse_core.logger.PulseLog
+import com.vhuthu.pulse_logging.PulseLogger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -143,6 +146,8 @@ class PulseRealtime private constructor(
         private var reconnectPolicy: ReconnectPolicy = ExponentialBackoff()
         private var okHttpClient: OkHttpClient = OkHttpClient()
 
+        private var logger: PulseLogger = NoOpLogger
+
         /**
          * Sets the WebSocket server URL.
          * Must start with ws:// or wss://.
@@ -169,6 +174,25 @@ class PulseRealtime private constructor(
         }
 
         /**
+         * Sets the logger for the SDK.
+         *
+         * During development use [PrintLogger] for JVM or AndroidLogger
+         * from :pulse-android for Logcat output.
+         *
+         * Defaults to [NoOpLogger] — silent in production.
+         *
+         * ```kotlin
+         * PulseRealtime.Builder()
+         *     .url("wss://api.example.com/socket")
+         *     .logger(PrintLogger)   // see all SDK logs
+         *     .build()
+         * ```
+         */
+        fun logger(logger: PulseLogger): Builder = apply {
+            this.logger = logger
+        }
+
+        /**
          * Builds the [PulseRealtime] instance.
          *
          * @throws IllegalStateException if [url] was not set.
@@ -177,6 +201,9 @@ class PulseRealtime private constructor(
             val resolvedUrl = checkNotNull(url) {
                 "PulseRealtime.Builder: url() must be called before build()"
             }
+
+            // Wire up the logger before anything else runs
+            PulseLog.setLogger(logger)
 
             // Shared coroutine scope — SupervisorJob so child failures are isolated
             val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
