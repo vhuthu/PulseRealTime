@@ -56,7 +56,7 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
-    implementation(project(":pulse-core"))
-    implementation(project(":pulse-android"))
-    implementation(project(":pulse-logging"))
+    implementation(project(":pulse-realtime"))
+
+    testImplementation(project(":pulse-testing"))
 }

@@ -1,16 +1,25 @@
 plugins {
-    alias(libs.plugins.jetbrains.kotlin.jvm)
+    alias(libs.plugins.android.library)
     alias(libs.plugins.vanniktech.publish)
 }
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
-}
+android {
+    namespace = "io.github.vhuthu.pulse"
+    compileSdk = 35
 
-kotlin {
-    compilerOptions {
-        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
+    defaultConfig {
+        minSdk = 24
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    kotlin {
+        compilerOptions {
+            jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
+        }
     }
 }
 
@@ -23,8 +32,11 @@ mavenPublishing {
 //    signAllPublications()
 
     pom {
-        name.set("PulseRealtime Testing")
-        description.set("Testing utilities for apps built with the PulseRealtime WebSocket SDK")
+        name.set("PulseRealtime")
+        description.set(
+            "Modular, lifecycle-aware, coroutine-first WebSocket SDK for Android. " +
+                    "Single dependency that includes core, Android lifecycle binding, and logging."
+        )
         url.set("https://github.com/vhuthu/PulseRealTime")
 
         licenses {
@@ -51,9 +63,7 @@ mavenPublishing {
 }
 
 dependencies {
-    implementation(project(":pulse-core"))
-    implementation(libs.kotlinx.coroutines.core)
-
-    testImplementation(libs.junit)
-    testImplementation(libs.kotlinx.coroutines.test)
+    api(project(":pulse-core"))
+    api(project(":pulse-android"))
+    api(project(":pulse-logging"))
 }
