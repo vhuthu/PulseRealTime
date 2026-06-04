@@ -89,6 +89,12 @@ internal class ConnectionManager(
         commands.trySend(ConnectionCommand.DisconnectTemporary)
     }
 
+    /**
+     * Sends a raw JSON frame to the server via the WebSocket engine.
+     * Returns true if the frame was queued successfully, false if disconnected.
+     */
+    fun sendRaw(frame: String): Boolean = engine.send(frame)
+
 
     /**
      * Processes commands from the channel sequentially.

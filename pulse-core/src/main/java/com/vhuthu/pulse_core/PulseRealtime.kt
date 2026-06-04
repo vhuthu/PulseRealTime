@@ -128,6 +128,18 @@ class PulseRealtime private constructor(
         subscriptionManager.unsubscribe(topic)
     }
 
+    /**
+     * Sends a raw JSON frame directly to the server.
+     *
+     * Use this for custom message types not covered by the subscription API.
+     * Returns true if sent successfully, false if not connected.
+     *
+     * Note: A typed send() API is planned for Phase 2.
+     */
+    fun sendRaw(frame: String): Boolean {
+        return connectionManager.sendRaw(frame)
+    }
+
     // ── Builder ───────────────────────────────────────────────────────────────
 
     /**

@@ -15,7 +15,7 @@ kotlin {
 }
 
 group = "io.github.vhuthu"
-version = "0.1.0"
+version = "0.1.1"
 
 mavenPublishing {
 
