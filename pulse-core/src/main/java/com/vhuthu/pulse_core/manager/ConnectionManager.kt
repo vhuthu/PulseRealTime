@@ -135,17 +135,15 @@ internal class ConnectionManager(
                 }
                 is InternalEvent.SocketFailed -> {
                     when (val current = _state.value) {
-                        is ConnectionState.Connecting -> {
-                            // First connect attempt failed — start reconnect from attempt 1
+                        is ConnectionState.Connecting, is ConnectionState.Connected -> {
                             commands.trySend(ConnectionCommand.ForceReconnect(attempt = 1))
                         }
                         is ConnectionState.Reconnecting -> {
-                            // A retry attempt failed — increment and continue
                             commands.trySend(
                                 ConnectionCommand.ForceReconnect(attempt = current.attempt + 1)
                             )
                         }
-                        else -> Unit // Ignore failures in other states
+                        else -> Unit
                     }
                 }
                 is InternalEvent.FrameReceived -> Unit // Handled by EventRouter
