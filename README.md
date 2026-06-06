@@ -1,3 +1,5 @@
+<div align="center">
+
 # ⚡ PulseRealtime
 
 **A modular, lifecycle-aware, coroutine-first WebSocket SDK for Android**
@@ -6,7 +8,7 @@
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.2.10-F5A623?style=for-the-badge&logo=kotlin)
 ![Coroutines](https://img.shields.io/badge/Coroutines-1.8.1-00B4A6?style=for-the-badge)
 ![OkHttp](https://img.shields.io/badge/OkHttp-4.12.0-FF6B6B?style=for-the-badge)
-![Tests](https://img.shields.io/badge/Tests-35%20passing-4CAF50?style=for-the-badge)
+![Maven Central](https://img.shields.io/badge/Maven%20Central-0.1.2-4CAF50?style=for-the-badge)
 
 *Built from scratch. No Socket.IO. No Ably. Pure engineering.*
 
@@ -34,11 +36,37 @@ sub.events.collect { event ->
 
 ---
 
+## Installation
+
+Add to your `app/build.gradle.kts`:
+
+```kotlin
+dependencies {
+    // Single dependency — includes core, Android lifecycle binding, and logging
+    implementation("io.github.vhuthu:pulse-realtime:0.1.2")
+
+    // For unit testing your code that uses PulseRealtime
+    testImplementation("io.github.vhuthu:pulse-testing:0.1.2")
+}
+```
+
+Or use individual modules if you only need specific functionality:
+
+```kotlin
+dependencies {
+    implementation("io.github.vhuthu:pulse-core:0.1.2")
+    implementation("io.github.vhuthu:pulse-android:0.1.2")   // lifecycle binding
+    implementation("io.github.vhuthu:pulse-logging:0.1.2")   // pluggable logger
+}
+```
+
+---
+
 ## Why this exists
 
 Modern Android apps need realtime communication. Teams repeatedly build the same things — connection management, retry logic, lifecycle handling, subscription restoration — and get them wrong in subtle, hard-to-reproduce ways.
 
-PulseRealtime solves this once, correctly, with a clean API surface and a fully tested internals.
+PulseRealtime solves this once, correctly, with a clean API surface and fully tested internals.
 
 ---
 
@@ -46,8 +74,8 @@ PulseRealtime solves this once, correctly, with a clean API surface and a fully 
 
 | Phase | What | Status |
 |-------|------|--------|
-| **Phase 1** | Core SDK — connect, reconnect, subscribe, typed events | ✅ **Complete** |
-| Phase 2 | Buffering, offline queueing, metrics, logging hooks | 🔜 Planned |
+| **Phase 1** | Core SDK — connect, reconnect, subscribe, typed events | ✅ **Complete · v0.1.2** |
+| Phase 2 | Buffering, offline queueing, metrics, typed serialization | 🔜 Planned |
 | Phase 3 | Encryption, interceptors, acknowledgements, presence | 🔜 Planned |
 | Phase 4 | Kotlin Multiplatform — iOS and desktop support | 🔜 Planned |
 
@@ -74,7 +102,7 @@ PulseRealtime solves this once, correctly, with a clean API surface and a fully 
 │              │  │             │  │                   │
 │ State machine│  │ JSON parse  │  │ Topic tracking    │
 │ Reconnect    │  │ Topic route │  │ Resubscribe on    │
-│ Heartbeat    │  │ Dispatch    │  │ reconnect         │
+│ loop         │  │ Dispatch    │  │ reconnect         │
 └──────┬───────┘  └──────┬──────┘  └───────────────────┘
        │                 │
        └────────┬────────┘
@@ -103,8 +131,8 @@ WebSocketEngine.emit(FrameReceived | SocketOpened | SocketClosed | SocketFailed)
        ▼
 SharedFlow<InternalEvent>  ◄──── the internal bus
        │
-       ├──► ConnectionManager  (drives ConnectionState transitions)
-       ├──► EventRouter        (deserializes frames, routes to topics)
+       ├──► ConnectionManager   (drives ConnectionState transitions)
+       ├──► EventRouter         (deserializes frames, routes to topics)
        └──► SubscriptionManager (tracks acks, replays on reconnect)
 ```
 
@@ -153,7 +181,7 @@ Subscribe/unsubscribe protocol (server-side):
 { "type": "subscribe",   "topic": "payments.updates", "ref": "ref-001" }
 
 // Server → Client (acknowledgement)
-{ "type": "subscribed",  "topic": "payments.updates", "ref": "ref-001" }
+{ "event": "subscribed", "topic": "payments.updates", "ref": "ref-001" }
 ```
 
 ---
@@ -162,29 +190,11 @@ Subscribe/unsubscribe protocol (server-side):
 
 ```
 pulse-realtime/
-├── pulse-core/                    ← Pure Kotlin. Zero Android deps. KMP-ready.
-│   └── src/main/kotlin/io/github/vhuthu/pulse/core/
-│       ├── PulseRealtime.kt       ← Public API + Builder
-│       ├── ConnectionState.kt     ← sealed interface (5 states)
-│       ├── PulseEvent.kt          ← typed event delivered to caller
-│       ├── TopicSubscription.kt   ← interface the caller holds
-│       ├── ReconnectPolicy.kt     ← interface + ExponentialBackoff + NoReconnect
-│       ├── InternalEvent.kt       ← internal bus payload (sealed interface)
-│       ├── connection/
-│       │   ├── ConnectionManager.kt   ← state machine + reconnect loop
-│       │   └── ConnectionCommand.kt   ← sealed interface (internal)
-│       ├── engine/
-│       │   └── WebSocketEngine.kt     ← OkHttp wrapper (only OkHttp import)
-│       ├── routing/
-│       │   └── EventRouter.kt         ← JSON parsing + topic dispatch
-│       └── subscription/
-│           └── SubscriptionManager.kt ← topic lifecycle + resubscription
-│
-├── pulse-android/                 ← Coming in Phase 2 (lifecycle binding)
-├── pulse-serialization/           ← Coming in Phase 2 (Kotlinx Serialization)
-├── pulse-logging/                 ← Coming in Phase 2 (pluggable logger)
-├── pulse-testing/                 ← Coming next (FakePulseRealtime)
-└── sample-chat-app/               ← Coming after (Compose demo)
+├── pulse-core/          ← Pure Kotlin. Zero Android deps. KMP-ready.
+├── pulse-android/       ← Lifecycle binding (bindToLifecycle)
+├── pulse-logging/       ← Pluggable logger interface
+├── pulse-testing/       ← FakePulseRealtime for unit tests
+└── pulse-realtime/      ← Facade — single dependency for consumers
 ```
 
 **Critical architectural rule:** `:pulse-core` imports zero Android dependencies. Only pure Kotlin, OkHttp, and coroutines. This keeps Kotlin Multiplatform on the table for Phase 4.
@@ -198,27 +208,35 @@ pulse-realtime/
 ```kotlin
 val pulse = PulseRealtime.Builder()
     .url("wss://api.example.com/socket")           // required
-    .reconnectPolicy(ExponentialBackoff(            // optional, defaults to ExponentialBackoff()
-        maxAttempts      = 5,
+    .reconnectPolicy(ExponentialBackoff(            // optional
+        maxAttempts        = 5,
         initialDelayMillis = 1_000L,
-        multiplier       = 2.0,
-        maxDelayMillis   = 30_000L,
+        multiplier         = 2.0,
+        maxDelayMillis     = 30_000L,
     ))
-    .okHttpClient(myCustomClient)                   // optional, bring your own
+    .okHttpClient(myCustomClient)                   // optional — bring your own
+    .logger(AndroidLogger)                          // optional — silent by default
     .build()
 ```
 
 ### Connecting
 
 ```kotlin
-pulse.connect()     // open the socket
-pulse.disconnect()  // close intentionally — no auto-reconnect until connect() again
+pulse.connect()              // open the socket
+pulse.disconnect()           // close intentionally — no auto-reconnect
+pulse.disconnectTemporary()  // close temporarily — auto-reconnects on connect()
+```
+
+### Lifecycle binding (`:pulse-android`)
+
+```kotlin
+// One line — auto connect on foreground, disconnect on background
+pulse.bindToLifecycle(this)
 ```
 
 ### Observing connection state
 
 ```kotlin
-// In your ViewModel
 viewModelScope.launch {
     pulse.connectionState.collect { state ->
         when (state) {
@@ -250,7 +268,7 @@ viewModelScope.launch {
 sub.cancel()
 ```
 
-Subscriptions survive reconnects automatically. If the connection drops and reconnects, PulseRealtime replays all active subscribe frames to the server without any app-side code.
+Subscriptions survive reconnects automatically. PulseRealtime replays all active subscribe frames to the server on reconnect — no app-side code required.
 
 ### Reconnect policies
 
@@ -268,6 +286,60 @@ object MyPolicy : ReconnectPolicy {
 }
 ```
 
+### Logging
+
+```kotlin
+// Development — print all SDK logs
+PulseRealtime.Builder()
+    .logger(PrintLogger)   // stdout — pure JVM
+    .build()
+
+// Custom logger — route to Timber, Firebase, etc.
+PulseRealtime.Builder()
+    .logger(object : PulseLogger {
+        override fun log(level: LogLevel, tag: String, message: String) {
+            Timber.tag(tag).d(message)
+        }
+        override fun log(level: LogLevel, tag: String, message: String, throwable: Throwable) {
+            Timber.tag(tag).e(throwable, message)
+        }
+    })
+    .build()
+```
+
+---
+
+## Testing with `:pulse-testing`
+
+```kotlin
+class PaymentsViewModelTest {
+
+    private val fake = FakePulseRealtime()
+    private lateinit var viewModel: PaymentsViewModel
+
+    @Before
+    fun setUp() {
+        viewModel = PaymentsViewModel(pulse = fake)
+    }
+
+    @Test
+    fun `shows payment when event arrives`() = runBlocking {
+        fake.simulateConnected()
+
+        fake.simulateMessage(
+            topic   = "payments.updates",
+            event   = "transfer_completed",
+            payload = """{"amount":500}""",
+        )
+
+        delay(300)
+        assertEquals("transfer_completed", viewModel.latestEvent.value?.event)
+    }
+}
+```
+
+No real server. No emulator. Pure JVM.
+
 ---
 
 ## ConnectionState reference
@@ -277,7 +349,7 @@ object MyPolicy : ReconnectPolicy {
 | `Disconnected` | No active connection. Initial state, or after intentional disconnect. |
 | `Connecting` | Handshake in progress. |
 | `Connected` | Socket open and healthy. |
-| `Reconnecting(attempt)` | Previous connection dropped. Waiting before retry `n`. |
+| `Reconnecting(attempt)` | Connection dropped. Waiting before retry `n`. |
 | `Failed(cause)` | All reconnect attempts exhausted. Requires explicit `connect()` to retry. |
 
 ---
@@ -290,73 +362,7 @@ object MyPolicy : ReconnectPolicy {
 | Command delivery | `Channel.CONFLATED` | Duplicate commands (rapid `connect()`) are dropped safely |
 | State output | `StateFlow<ConnectionState>` | Always delivers the latest state — no missed emissions |
 | Event output | `SharedFlow<PulseEvent<T>>` | One-shot semantics — no stale "current value" |
-| Public API | `suspend` functions + `Flow` | No callbacks, no thread management for the caller |
-
----
-
-## Test coverage
-
-| Class | Tests | What's covered |
-|-------|-------|----------------|
-| `ExponentialBackoff` | 7 | Delay formula, cap, flat multiplier, all 4 validation paths |
-| `NoReconnect` | 2 | Always false, always 0 delay |
-| `WebSocketEngine` | 6 | Open→SocketOpened, frame delivery, close→SocketClosed, send true/false, SocketFailed |
-| `ConnectionManager` | 7 | Initial state, connect, double-connect guard, disconnect, disconnect-while-connecting, NoReconnect→Failed, ExponentialBackoff→Reconnecting |
-| `EventRouter` | 9 | Topic delivery, drop unregistered, two subscribers, unregister, malformed JSON, missing topic, missing event, ref null, ref populated, non-frame events |
-| `SubscriptionManager` | 8 | Subscribe returns correct topic, event delivery, wrong topic drop, cancel, SocketOpened replay, SocketClosed clear, resubscription cycle, multiple topics |
-| `PulseRealtime` (integration) | 8 | Builder validation, initial state, connect→Connected, disconnect→Disconnected, event delivery, wrong topic drop, cancel, bad URL→Failed |
-| **Total** | **47** | |
-
-All tests run on the JVM with no Android emulator required — `MockWebServer` provides a real local WebSocket server for integration tests.
-
----
-
-## Quick start (sample app)
-
-```kotlin
-class MainActivity : ComponentActivity() {
-
-    private lateinit var pulse: PulseRealtime
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        pulse = PulseRealtime.Builder()
-            .url("ws://10.0.2.2:8080")  // emulator → host machine
-            .build()
-
-        pulse.connect()
-
-        // Observe connection state
-        lifecycleScope.launch {
-            pulse.connectionState.collect { state ->
-                Log.d("PULSE", "State = $state")
-            }
-        }
-
-        // Subscribe to a topic
-        val sub = pulse.subscribe("payments")
-        lifecycleScope.launch {
-            sub.events.collect { event ->
-                Log.d("PULSE", "Event = ${event.event}, payload = ${event.payload}")
-            }
-        }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        pulse.disconnect()
-    }
-}
-```
-
-Add to `AndroidManifest.xml` for local development over plain WebSocket:
-
-```xml
-<application
-    android:usesCleartextTraffic="true"
-    ...>
-```
+| Public API | `Flow` + coroutines | No callbacks, no thread management for the caller |
 
 ---
 
@@ -372,34 +378,24 @@ Add to `AndroidManifest.xml` for local development over plain WebSocket:
 | State output | `StateFlow<ConnectionState>` | Always delivers latest state; no missed emissions |
 | State owner | `ConnectionManager` only | Single writer eliminates race conditions |
 | Command delivery | `Channel.CONFLATED` | Drops redundant commands; no duplicate connections |
-| Internal comms | `SharedFlow` event bus | Managers are fully decoupled; each independently testable |
+| Internal comms | `SharedFlow` event bus | Managers fully decoupled; each independently testable |
 | Threading | `SupervisorJob + Dispatchers.IO` | Child failures isolated; no blocking |
 | Android dep isolation | `:pulse-android` only | `:pulse-core` stays KMP-ready |
 
 ---
 
-## Upcoming modules
+## Sample app
 
-### `:pulse-testing` (next)
-```kotlin
-// Test your app without a real WebSocket server
-val fake = FakePulseRealtime()
-fake.simulateMessage(topic = "payments", event = "transfer", payload = "{}")
-fake.simulateDisconnect()
-```
+**Chatz** — a full real-time chat app built with PulseRealtime.
 
-### `:pulse-android` (Phase 2)
-```kotlin
-// Auto disconnect in background, reconnect in foreground
-pulse.bindToLifecycle(lifecycleOwner)
-```
+- Room-based group chat
+- Private messaging via invite codes
+- Typing indicators
+- Message history (MongoDB)
+- Auto-reconnect with animated connection banner
+- Lifecycle-aware — disconnects in background, reconnects in foreground
 
-### `:pulse-serialization` (Phase 2)
-```kotlin
-// Typed payloads — no more raw JSON strings
-val sub = pulse.subscribe("payments", PaymentEvent.serializer())
-sub.events.collect { event: PulseEvent<PaymentEvent> -> }
-```
+[View Chatz-Sample on GitHub](https://github.com/vhuthu/Chatz-Sample)
 
 ---
 
@@ -409,15 +405,35 @@ sub.events.collect { event: PulseEvent<PaymentEvent> -> }
 - **Kotlinx Coroutines** 1.8.1
 - **OkHttp** 4.12.0
 - **org.json** 20240303
-- **JUnit 4** for testing
+- **JUnit 4** for unit testing
 - **OkHttp MockWebServer** for integration tests
+
+---
+
+## Changelog
+
+### v0.1.2
+- Fixed `ConnectionManager` not triggering reconnect loop when socket drops from `Connected` state
+- Added `sendRaw()` to public API for custom frame types
+
+### v0.1.1
+- Added `sendRaw()` internal method (superseded by v0.1.2)
+
+### v0.1.0
+- Initial release — full Phase 1 SDK
 
 ---
 
 <div align="center">
 
-*PulseRealtime — built to learn SDK engineering the right way.*
+*PulseRealtime — Per Aspera Ad Astra*
 
-**[Phase 1 complete · Phase 2 coming soon]**
+**[Phase 1 complete · v0.1.2 on Maven Central]**
+
+[Maven Central](https://central.sonatype.com/artifact/io.github.vhuthu/pulse-realtime) · [Chatz Sample App](https://github.com/vhuthu/Chatz-Sample)
+
+<br>
+
+Made with ❤️ by **Vhuthu Kwinda**
 
 </div>
